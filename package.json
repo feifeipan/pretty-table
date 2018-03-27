@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "chart.js": "^2.7.2",
+    "dot": "^1.1.2",
     "handsontable-pro": "^1.18.1"
   }
 }

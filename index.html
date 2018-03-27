@@ -11,206 +11,205 @@
 <body>
     <div id="container"></div>
     <div id="chartTypeList">
-    	<button data-prop="bar" onclick="draw('bar')">柱状图</button>
-    	<button data-prop="line" onclick="draw('line')">线状图</button>
+        <button data-prop="bar" onclick="draw('bar')">柱状图</button>
+        <button data-prop="line" onclick="draw('line')">线状图</button>
+    </div>
+    <div id="actionTypeList">
+        <button data-prop="bar" onclick="update()">更新数据</button>
+        <button data-prop="bar" onclick="exportChart()">导出图表</button>
     </div>
     <div id="event_logger"></div>
-
     <canvas id="myChart" width="400" height="400"></canvas>
-
     <script type="text/javascript">
-    var $$ = function(el){
-    	return document.getElementById(el);
+    var $$ = function(el) {
+        return document.getElementById(el);
     }
 
-    var T = function(){
-    	this.initConfig();
-    	this.bindData();
+    var global_hstable;
 
-    	this.bindEvent();
-    } 
+    var T = function() {
+        this.initConfig();
+        this.bindData();
 
-    T.prototype.initConfig = function(){
-    	//todo binding data
-    	var _this = this;
-    	this.data = data =  [
-	      ['', 'Tesla', 'Mazda', 'Mercedes', 'Mini', 'Mitsubishi','AA', 'BB', 'CC', 'DD', 'EE'],
-	      ['2017', 0, 2941, 4303, 354, 5814,2, 2422, 5399, 776, 4151],
-	      ['2018', 3, 2905, 2867, 412, 5284,0, 2941, 4303, 354, 5814],
-	      ['2019', 4, 2517, 4822, 552, 6127,3, 2905, 2867, 412, 5284],
-	      ['2020', 2, 2422, 5399, 776, 4151,4, 2517, 4822, 552, 6127]
-	    ];
-
-         this.container = $$("container");
-         this.event_logger = $$("event_logger");
-
-         this.config = {
-         		data: data,
-		    minRows: 5,
-		    minCols: 6,
-		    minSpareRows: 1,
-		    autoWrapRow: true,
-		    colHeaders: true,
-		    contextMenu: true
-         }
-
-         this.preHookList = ["afterSelection"];
-
-         this.preHookList.forEach(function(hook){
-	  	_this.config[hook] = function(){
-	  		log_events(hook, arguments);
-	  	}
-	  });
+        this.bindEvent();
     }
 
-    T.prototype.bindData = function(){
-    	var _this = this;
-    	 this.hstable = new Handsontable(_this.container,_this.config);
+    T.prototype.initConfig = function() {
+        //todo binding data
+        var _this = this;
+        this.data = data = [
+            ['', 'Tesla', 'Mazda', 'Mercedes', 'Mini', 'Mitsubishi', 'AA', 'BB', 'CC', 'DD', 'EE'],
+            ['2017', 0, 2941, 4303, 354, 5814, 2, 2422, 5399, 776, 4151],
+            ['2018', 3, 2905, 2867, 412, 5284, 0, 2941, 4303, 354, 5814],
+            ['2019', 4, 2517, 4822, 552, 6127, 3, 2905, 2867, 412, 5284],
+            ['2020', 2, 2422, 5399, 776, 4151, 4, 2517, 4822, 552, 6127]
+        ];
+
+        this.container = $$("container");
+        this.event_logger = $$("event_logger");
+
+        this.config = {
+            data: data,
+            minRows: 5,
+            minCols: 6,
+            minSpareRows: 1,
+            autoWrapRow: true,
+            colHeaders: true,
+            contextMenu: true
+        }
+
+        this.preHookList = ["afterSelection", "afterChange"];
+
+        this.preHookList.forEach(function(hook) {
+            _this.config[hook] = function() {
+                log_events(hook, arguments);
+            }
+        });
     }
 
-    T.prototype.bindEvent = function(){
-    	
+    T.prototype.bindData = function() {
+        var _this = this;
+        global_hstable = this.hstable = new Handsontable(_this.container, _this.config);
     }
 
-   var myT = new T();
-  
-    
-  var start = (new Date()).getTime();
-  var i = 0;
-  var timer;
-  var event_logger = document.getElementById("event_logger");
+    T.prototype.bindEvent = function() {
 
-  var selectionArea = [];
+    }
 
-  function log_events(event, data){
-  	selectionArea =  [[parseInt(data[0]), parseInt(data[1])], [parseInt(data[2]), parseInt(data[3])]];
-  }
+    T.prototype.generateData = function(coordinate) {
+        //gen labels
+        var D = this.data;
+        var totalLabels = this.data[0];
+        var sa = coordinate;
+        var labels = [];
 
-  // function log_events(event, data) {
-  //   // if (document.getElementById('check_' + event).checked) {
-  //     var now = (new Date()).getTime(),
-  //       diff = now - start,
-  //       vals, str, div, text;
+        for (var i = sa["sx"]; i <= sa["ex"]; i++) {
+            labels.push(totalLabels[i]);
+        }
 
-  //     vals = [
-  //       i,
-  //         "@" + numbro(diff / 1000).format('0.000'),
-  //         "[" + event + "]"
-  //     ];
+        //gen data
+        var datasets = [];
+        if (sa["sx"] == 0) { sa["sx"] = 1 };
+        if (sa["sy"] == 0) { sa["sy"] = 1 };
 
-  //     vals2 = [];
-  //     for (var d = 0; d < data.length; d++) {
-  //       try {
-  //         str = JSON.stringify(data[d]);
-  //       }
-  //       catch (e) {
-  //         str = data[d].toString(); // JSON.stringify breaks on circular reference to a HTML node
-  //       }
+        for (var i = sa["sx"]; i <= sa["ex"]; i++) {
+            var data = [];
+            for (var j = sa["sy"]; j <= sa["ey"]; j++) {
+                data.push(D[i][j]);
+            }
+            datasets.push({
+                label: D[i][0],
+                data: data,
+                borderWidth: 1,
+                fill: false
+            });
+        }
 
-  //       if (str === void 0) {
-  //         continue;
-  //       }
+        console.log("==labels==", labels);
+        console.log("==datasets==", datasets);
 
-  //       if (str.length > 20) {
-  //         str = Object.prototype.toString.call(data[d]);
-  //       }
-  //       if (d < data.length - 1) {
-  //         // str += ',';
-  //       }
-  //       vals.push(str);
-  //       vals2.push(str);
-  //     }
-
-  //     if (window.console) {
-  //       // console.log(i,
-  //       //     "@" + numbro(diff / 1000).format('0.000'),
-  //       //     "[" + event + "]",
-  //       //   data);
-  //     }
-  //     div = document.createElement("DIV");
-  //     text = document.createTextNode(vals.join(" "));
-
-  //     div.appendChild(text);
-  //     event_logger.appendChild(div);
-
-  //     selectionArea = [[vals2[0], vals2[1]], [vals2[2], vals2[3]]];
-  //     console.log("==selectionArea==", selectionArea);
-
-  //     clearTimeout(timer);
-  //     timer = setTimeout(function() {
-  //       event_logger.scrollTop = event_logger.scrollHeight;
-  //     }, 10);
-
-  //     // i++;
-  //   // }
-  // }
-
-  function draw(type){
-
-  }
-   </script>
-
-
-    <script>
-var ctx = document.getElementById("myChart").getContext('2d');
-var myChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
-        datasets: [{
-            label: '# of Votes',
-            data: [12, 19, 3, 5, 2, 3],
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)'
-            ],
-            borderColor: [
-                'rgba(255,99,132,1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)'
-            ],
-            borderWidth: 1
-        },
-        {
-            label: '# of Votes',
-            data: [2, 9, 13, 15, 22, 13],
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)'
-            ],
-            borderColor: [
-                'rgba(255,99,132,1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)'
-            ],
-            borderWidth: 1
-        }]
-    },
-    options: {
-        scales: {
-            yAxes: [{
-                ticks: {
-                    beginAtZero:true
-                }
-            }]
+        return {
+            "labels": labels,
+            "datasets": datasets
         }
     }
-});
-</script>
+
+    var myT = new T();
+
+
+    var start = (new Date()).getTime();
+    var i = 0;
+    var timer;
+    var event_logger = document.getElementById("event_logger");
+
+    var selectionArea, changedArea;
+
+
+    function log_events(event, data) {
+        switch (event) {
+            case "afterSelection":
+                selectionArea = {
+                    sx: parseInt(data[0]), //startX
+                    sy: parseInt(data[1]), //startY
+                    ex: parseInt(data[2]), //endX
+                    ey: parseInt(data[3]) //endY
+                };
+                console.log("==selectionArea==", selectionArea)
+                break;
+            case "afterChange":
+                var d = data[0];
+                if (d) {
+                    console.log("==data[0]==", data[0]);
+                    changedArea = {
+                        px: d[0][0], //positionX
+                        py: d[0][1], //positionY
+                        ov: d[0][2], //old_value
+                        nv: d[0][3] //new_value
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    function update() {
+        let header = new Headers({
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'multipart/form-data'
+        });
+        // let opt = Object.assign({}, defaultOptions, options); //将默认的参数和传过来的合并在一起
+        let sentData = {
+            method: "POST",
+            mode: 'cors',
+            header: header,
+            body: JSON.stringify(changedArea)
+        };
+        var promise = new Promise((reslove, reject) => {
+            fetch("http://127.0.0.1:3000/", sentData)
+                .then(response => response.json())
+                .then(responseText => {
+                    let resp = typeof responseText === 'string' ? JSON.parse(responseText) : responseText;
+                    console.log(resp);
+                    reslove(resp); //这个resp会被外部接收
+                }).catch(err => {
+                    console.log(err);
+                    reject(err);
+                });
+        }).catch(err => {
+            console.log('出错了');
+        });
+
+        promise.then(function(value){
+            global_hstable.setDataAtCell(value["px"], value["py"], parseInt(value["nv"]));
+            console.log(value);
+        }).catch(function(error){
+            console.error(error);
+        });
+      }
+
+    function draw(type) {
+        var ctx = document.getElementById("myChart").getContext('2d');
+        var result = myT.generateData(selectionArea);
+
+        var myChart = new Chart(ctx, {
+            type: type,
+            data: {
+                labels: result["labels"],
+                datasets: result["datasets"]
+            },
+            options: {
+
+            }
+        });
+    }
+
+    function exportChart(){
+      
+    }
+    </script>
+    <script>
+    </script>
 </body>
 
 </html>
