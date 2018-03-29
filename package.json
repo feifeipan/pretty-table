@@ -9,8 +9,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^1.18.2",
     "chart.js": "^2.7.2",
     "dot": "^1.1.2",
-    "handsontable-pro": "^1.18.1"
+    "express": "^4.16.3",
+    "handsontable-pro": "^1.18.1",
+    "mime": "^2.2.0",
+    "mustache": "^2.3.0",
+    "pug": "^2.0.3"
   }
 }

@@ -1,0 +1,25 @@
+html
+  head
+    title= "chart template"
+    script(type='text/javascript' src="chart.min.js")
+
+  body
+    canvas(id="myChart" width="400" height="400")
+  
+  script.
+     var globalConfig = !{JSON.stringify(globalConfig)}
+     function draw() {
+        var ctx = document.getElementById("myChart").getContext('2d');
+
+        var myChart = new Chart(ctx, {
+            type: globalConfig.type,
+            data: {
+                labels: globalConfig.labels,
+                datasets: globalConfig.datasets
+            },
+            options: {
+
+            }
+        });
+    }
+    draw();

@@ -6,6 +6,7 @@
     <link rel="stylesheet" media="screen" href="dist/handsontable.full.min.css">
     <script src="dist/handsontable.full.min.js"></script>
     <script type="text/javascript" charset="utf-8" src="dist/chart.min.js"></script>
+     <script type="text/javascript" charset="utf-8" src="dist/dot.min.js"></script>
 </head>
 
 <body>
@@ -26,6 +27,7 @@
     }
 
     var global_hstable;
+    var global_type, global_labels, global_datasets;
 
     var T = function() {
         this.initConfig();
@@ -89,6 +91,7 @@
 
         //gen data
         var datasets = [];
+        var d = [];
         if (sa["sx"] == 0) { sa["sx"] = 1 };
         if (sa["sy"] == 0) { sa["sy"] = 1 };
 
@@ -103,10 +106,23 @@
                 borderWidth: 1,
                 fill: false
             });
+
+            d.push({
+                label: D[i][0],
+                data: data,
+                borderWidth: 1,
+                fill: false
+            })
+
+            // console.log("==data==",)
         }
 
         console.log("==labels==", labels);
         console.log("==datasets==", datasets);
+         console.log("==d==", d);
+
+        global_labels = labels;
+        global_datasets = d;
 
         return {
             "labels": labels,
@@ -141,10 +157,10 @@
                 if (d) {
                     console.log("==data[0]==", data[0]);
                     changedArea = {
-                        px: d[0][0], //positionX
-                        py: d[0][1], //positionY
-                        ov: d[0][2], //old_value
-                        nv: d[0][3] //new_value
+                        "px": d[0][0], //positionX
+                        "py": d[0][1], //positionY
+                        "ov": d[0][2], //old_value
+                        "nv": d[0][3] //new_value
                     }
                 }
                 break;
@@ -154,19 +170,19 @@
     }
 
     function update() {
-        let header = new Headers({
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'multipart/form-data'
-        });
+        let headers = new Headers( {
+            "Content-Type": "application/json"
+            });
         // let opt = Object.assign({}, defaultOptions, options); //将默认的参数和传过来的合并在一起
+  
         let sentData = {
             method: "POST",
             mode: 'cors',
-            header: header,
+            headers: headers,
             body: JSON.stringify(changedArea)
         };
         var promise = new Promise((reslove, reject) => {
-            fetch("http://127.0.0.1:3000/", sentData)
+            fetch("http://127.0.0.1:3000/update", sentData)
                 .then(response => response.json())
                 .then(responseText => {
                     let resp = typeof responseText === 'string' ? JSON.parse(responseText) : responseText;
@@ -189,6 +205,7 @@
       }
 
     function draw(type) {
+      global_type = type;
         var ctx = document.getElementById("myChart").getContext('2d');
         var result = myT.generateData(selectionArea);
 
@@ -204,9 +221,58 @@
         });
     }
 
-    function exportChart(){
-      
+    function wrapper(str){
+      return ["\"", str.replace(/\"/,"\""),"\""].join("")
     }
+
+    function exportChart(){
+      let header = new Headers({
+            // 'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json'
+        });
+        // let opt = Object.assign({}, defaultOptions, options); //将默认的参数和传过来的合并在一起
+        var exportData = {
+                type: global_type,
+                labels: global_labels,
+                datasets: global_datasets
+            };
+        
+
+        let sentData = {
+            method: "POST",
+            mode: 'cors',
+            headers: header,
+            body: JSON.stringify(exportData)
+        };
+
+        console.log("==sentData==", sentData);
+
+      var promise = new Promise((reslove, reject) => {
+            fetch("http://127.0.0.1:3000/export", sentData)
+                // .then(response => response.json())
+                .then(responseText => {
+                    // let resp = typeof responseText === 'string' ? JSON.parse(responseText) : responseText;
+                    let resp = responseText;
+                    console.log(resp);
+                    reslove(resp); //这个resp会被外部接收
+                }).catch(err => {
+                    console.log(err);
+                    reject(err);
+                });
+        }).catch(err => {
+            console.log('出错了');
+        });
+
+        promise.then(function(value){
+             window.open("http://127.0.0.1:3000/new.html");
+            console.log(value);
+        }).catch(function(error){
+            console.error(error);
+        });
+    }
+
+
+  
     </script>
     <script>
     </script>
