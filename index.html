@@ -5,8 +5,15 @@
     <title>handsontable demo</title>
     <link rel="stylesheet" media="screen" href="dist/handsontable.full.min.css">
     <script src="dist/handsontable.full.min.js"></script>
+    <script type="text/javascript" src="dist/externalPluginSkeleton.js"></script>
     <script type="text/javascript" charset="utf-8" src="dist/chart.min.js"></script>
      <script type="text/javascript" charset="utf-8" src="dist/dot.min.js"></script>
+
+    <style type="text/css">
+    .handsontable .errorCell{
+        border:1px solid red;
+    }        
+    </style>
 </head>
 
 <body>
@@ -27,13 +34,49 @@
     }
 
     var global_hstable;
-    var global_type, global_labels, global_datasets;
+    var global_type, global_labels, global_datasets, global_formatData;
 
     var T = function() {
         this.initConfig();
         this.bindData();
 
         this.bindEvent();
+    }
+
+    T.prototype.convertData = function(data){
+        if(data.length == 0){
+            return false;
+        }
+        var col_len = data[0].length;
+        var row_len = data.length;
+        var newData = {};
+        /**
+        {
+            "0-0":{
+                "value","",
+                "formatString":"SUM(0-0:0-1)",
+                "valid":true
+            },
+            "0-1":{
+                "value":"Tesla",
+                "formatString":null,
+                "valid":true
+            }
+        }
+        **/
+        for(var i=0; i<row_len; i++){
+            for(var j=0; j<col_len; j++){
+                newData[i+"-"+j] = {
+                    "value": data[i][j],
+                    "formatString":null,
+                    "valid":true
+                }
+            }
+        }
+
+         this.formatData = newData;
+
+         // console.log("==newData==", newData);
     }
 
     T.prototype.initConfig = function() {
@@ -47,6 +90,8 @@
             ['2020', 2, 2422, 5399, 776, 4151, 4, 2517, 4822, 552, 6127]
         ];
 
+        this.convertData(data);
+
         this.container = $$("container");
         this.event_logger = $$("event_logger");
 
@@ -57,10 +102,11 @@
             minSpareRows: 1,
             autoWrapRow: true,
             colHeaders: true,
-            contextMenu: true
+            contextMenu: true,
+            // formulas: true
         }
 
-        this.preHookList = ["afterSelection", "afterChange"];
+        this.preHookList = ["afterSelection", "afterChange", "afterOnCellMouseDown","afterOnCellCornerDblClick"];
 
         this.preHookList.forEach(function(hook) {
             _this.config[hook] = function() {
@@ -72,6 +118,8 @@
     T.prototype.bindData = function() {
         var _this = this;
         global_hstable = this.hstable = new Handsontable(_this.container, _this.config);
+        // global_hstable.enablePlugin();
+        // this.hstable.enablePlugin();
     }
 
     T.prototype.bindEvent = function() {
@@ -164,45 +212,13 @@
                     }
                 }
                 break;
+            case "afterOnCellMouseDown":
+                console.log("==afterOnCellMouseDown==", data);
+                break;
             default:
                 break;
         }
     }
-
-    function update() {
-        let headers = new Headers( {
-            "Content-Type": "application/json"
-            });
-        // let opt = Object.assign({}, defaultOptions, options); //将默认的参数和传过来的合并在一起
-  
-        let sentData = {
-            method: "POST",
-            mode: 'cors',
-            headers: headers,
-            body: JSON.stringify(changedArea)
-        };
-        var promise = new Promise((reslove, reject) => {
-            fetch("http://127.0.0.1:3000/update", sentData)
-                .then(response => response.json())
-                .then(responseText => {
-                    let resp = typeof responseText === 'string' ? JSON.parse(responseText) : responseText;
-                    console.log(resp);
-                    reslove(resp); //这个resp会被外部接收
-                }).catch(err => {
-                    console.log(err);
-                    reject(err);
-                });
-        }).catch(err => {
-            console.log('出错了');
-        });
-
-        promise.then(function(value){
-            global_hstable.setDataAtCell(value["px"], value["py"], parseInt(value["nv"]));
-            console.log(value);
-        }).catch(function(error){
-            console.error(error);
-        });
-      }
 
     function draw(type) {
       global_type = type;
