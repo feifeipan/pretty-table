@@ -1,3 +1,60 @@
+// (function( $ ) {
+
+    // Default tooltip position.    
+    var ttpos = $.ui.tooltip.prototype.options.position;
+
+    // Autocomplete widget extension to provide description
+    // tooltips.
+    $.widget( "custom.superautocomplete", $.ui.autocomplete, {
+        
+        _create: function() {
+            this._super();
+            
+            // After the menu has been created, apply the tooltip
+            // widget. The "items" option selects menu items with
+            // a title attribute, the position option moves the tooltip
+            // to the right of the autocomplete dropdown.
+            this.menu.element.tooltip({ 
+                items: "li[title]",
+                position: $.extend( {}, ttpos, {
+                    my: "left+12",
+                    at: "right"
+                })
+            });
+            
+        },
+        
+        // Clean up the tooltip widget when the autocomplete is
+        // destroyed.
+        _destroy: function() {
+            this.menu.element.tooltip( "destroy" );
+            this._super();
+        },
+        
+        // Set the title attribute as the "item.desc" value.
+        // This becomes the tooltip content.
+        _renderItem: function( ul, item ) {
+           console.log("_renderItem", item);
+            return this._super( ul, item )
+                .attr( "title", item.desc );
+        }
+    });
+    
+    // $(function() {
+        
+    //     // Autocomplet instance with demo data. Notice each
+    //     // object has a desc attribute.
+    //     $( "#books" ).autocomplete({
+    //         source: [
+    //             { value: 1, label: "Book 1", desc: "Here is book 1" },
+    //             { value: 2, label: "Book 2", desc: "Here is book 2" },
+    //             { value: 3, label: "Book 3", desc: "Here is book 3" }
+    //         ]
+    //     });
+        
+    // });
+    
+// })( jQuery );
 /**
  * @plugin External plugin skeleton.
  * Note: keep in mind, that Handsontable instance creates one instance of the plugin class.
@@ -36,10 +93,10 @@ function ExternalPluginSkeleton(hotInstance) {
     TYPE_LIST = 5; // 该类型仅限内部运算
     */
     this.typeMapping = {
-      "decimalValue":1,
-      "strValue":4,
-      "1": "decimalValue",
-      "4": "strValue"
+        "decimalValue": 1,
+        "strValue": 4,
+        "1": "decimalValue",
+        "4": "strValue"
     }
     /**
      * anotherProperty description.
@@ -78,10 +135,15 @@ ExternalPluginSkeleton.prototype.enablePlugin = function() {
 
     // Add all your plugin hooks here. It's a good idea to make use of the arrow functions to keep the context consistent.
     this.addHook("beforeInit", this.onBeforeInit.bind(this));
+    this.addHook("beforeKeyDown", this.onBeforeKeyDown.bind(this));
+    this.addHook("beforeChange", this.onBeforeChange.bind(this));
+
+
     this.addHook("afterInit", this.onAfterInit.bind(this));
     this.addHook("afterChange", this.onAfterChange.bind(this));
     this.addHook("afterOnCellMouseDown", this.onAfterOnCellMouseDown.bind(this));
     this.addHook("afterCreateRow", this.onAfterCreateRow.bind(this));
+
 
     // The super class' method assigns the this.enabled property to true, which can be later used to check if plugin is already enabled.
     this._superClass.prototype.enablePlugin.call(this);
@@ -160,6 +222,58 @@ ExternalPluginSkeleton.prototype.onAfterInit = function(lang) {
 }
 
 /**
+ *
+ */
+
+ ExternalPluginSkeleton.prototype.onBeforeKeyDown = function(event){
+  // console.log("==onBeforeKeyDown==");
+
+  // console.log(this.hot.getSelected());
+  if(event.key == "="){
+     var sc = this.hot.getSelected();
+     var row = sc[0][0];
+     var col = sc[0][1];
+      // var selectedCell = this.hot.getCell(row, col);
+      // console.log(row, col);
+
+      /**temp autocomplete plugin**/
+      var formulaList = [
+         { value: "=SUM", label: "SUM", desc: "Here is SUM" },
+         { value: "=SUMIF", label: "SUMIF", desc: "Here is SUMIF" },
+        { value: "=SUMSQ", label: "SUMSQ", desc: "Here is SUMSQ" }
+      ];
+      // var tags = [ "SUM", "SUMIF", "SUMSQ", "ABS", "ADD", "ASIN"];
+      $(event.target).superautocomplete({
+          source: function(request, response){
+             var matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( request.term.replace(/(^=)/,"") ), "i" );
+              response( $.grep( formulaList, function( item ){
+                  return matcher.test( item.label );
+              }) );
+          },
+          change: function(event, ui){
+            console.log("autocomplete change:",$(event.target).val());
+          },
+          focus: function(event, ui){
+            event.preventDefault();
+            $(event.target).val(ui.item.value.toUpperCase());
+            console.log("autocomplete focus:",$(event.target).val());
+            console.log(ui);
+          }
+      });
+      // this.hot.setCellMeta(row, col, "className", "errorCell");
+      // this.hot.setCellMeta(row, col, "type", "autocomplete");
+      // this.hot.setCellMeta(row, col, "source", ["=SUM", "=ABS", "=DATE", "=YEAR"]);
+      // this.hot.render();
+  }
+ }
+
+ExternalPluginSkeleton.prototype.onBeforeChange = function(changes, source){
+  console.log("==onBeforeChange==");
+  console.log(changes);
+  console.log(source);
+}
+
+/**
  * The afterChange hook callback.
  *
  * @param {Array} 2D array containing information about each of the edited cells [[row, prop, oldVal, newVal], ...].
@@ -220,8 +334,9 @@ ExternalPluginSkeleton.prototype.onAfterOnCellMouseDown = function(event, coords
     }, 100);
 
     var v = this.formatData[nowEl];
+    console.log("==nowEl==", nowEl);
     console.log("==formatData==", v);
-    if (v.formulaString != null) {
+    if (v.formulaString != "=null") {
         this.hot.setDataAtCell(coords["row"], coords["col"], v["formulaString"], "showformula");
     }
 }
@@ -283,25 +398,34 @@ ExternalPluginSkeleton.prototype.invokeService = function(name, postData, callba
     });
 
     promise.then(function(resp) {
-        //暂时将callback执行actionCode写在一起，后续看情况拆分
+        //暂时将callback执行actionCode放在一起，后续看情况拆分
         if (resp["statusCode"] == 0) {
             var content = resp["content"];
 
             var content_type = Object.prototype.toString.call(content);
-            switch(content_type){
-              case "[object String]":
-                callback && callback(resp);
-                break;
-              case "[object Array]":
-                content.forEach(function(item, index){
-                var actionCode = item["actionCode"];
-                switch(actionCode){
-                  case "UpdateCell":
-                    _this.notifyUpdateCell(item);
+            switch (content_type) {
+                case "[object String]":
+                    callback && callback(resp);
                     break;
-                }
-              });
-              callback && callback(resp);
+                case "[object Array]":
+                    async.map(content, function(item) {
+                        var actionCode = item["actionCode"];
+                        switch (actionCode) {
+                            case "UpdateCell":
+                                _this.notifyUpdateCell(item);
+                                break;
+                            case "RefreshFormulaResult":
+                                _this.notifyRefreshFormulaResult(item)
+                                break;
+                            default:
+                                break;
+                        }
+                    }, function(err, results) {
+                        console.log(err.message);
+                        console.log(results);
+                    });
+
+                    callback && callback(resp);
             }
         } else {
             errorCallback && errorCallback(resp["message"]);
@@ -413,27 +537,47 @@ ExternalPluginSkeleton.prototype.update = function(changes) {
 
 
     this.invokeService("rest/sheet/cell/update ", changedArea, (resp) => {
-           
+
         },
         (errorMessage) => {
-           
+
         });
 }
 
-ExternalPluginSkeleton.prototype.notifyUpdateCell = function(respAction){
-         // var respAction = resp["action"];
-            var row = respAction["rowIndex"];
-            var col = respAction["columnIndex"];
+ExternalPluginSkeleton.prototype.notifyUpdateCell = function(respAction) {
+  // return false;
+    // var respAction = resp["action"];
+    var row = respAction["rowIndex"];
+    var col = respAction["columnIndex"];
+    var isValid = !(respAction["value"] && respAction["value"]["type"] == -1)
 
-            var vKey = this.typeMapping[respAction["value"]["type"]];
-            this.hot.setDataAtCell(row, col, respAction["value"][vKey], "backend");
-            this.setValidateStyleAtCell(row, col, respAction["value"]["valid"]);
-            this.formatData[row + "-" + col] = {
-                "value": respAction["value"]["data"],
-                "formulaString": respAction["formulaString"],
-                "valid": respAction["value"]["valid"]
-            };
+    if(respAction.hasOwnProperty("formulaString")){
+          this.setValidateStyleAtCell(row, col, isValid);
+
+          this.formatData[row + "-" + col]["formulaString"] = "="+respAction["formulaString"];
+          this.formatData[row + "-" + col]["valid"] = isValid;
+
+    }else{
+         var vKey = this.typeMapping[respAction["value"]["type"]];
+          this.hot.setDataAtCell(row, col, respAction["value"][vKey], "backend");
+          this.setValidateStyleAtCell(row, col, isValid);
+          this.formatData[row + "-" + col]["value"] = respAction["value"][vKey];
+          this.formatData[row + "-" + col]["valid"] = isValid;
+    }
+   
 }
+
+ExternalPluginSkeleton.prototype.notifyRefreshFormulaResult = function(respAction) {
+    var row = respAction["rowIndex"];
+    var col = respAction["columnIndex"];
+    var isValid = !(respAction["value"] && respAction["value"]["type"] == -1)
+
+     var vKey = this.typeMapping[respAction["value"]["type"]];
+    this.hot.setDataAtCell(row, col, respAction["value"][vKey], "backend");
+    this.setValidateStyleAtCell(row, col, isValid);
+     this.formatData[row + "-" + col]["value"] = respAction["value"][vKey];
+    this.formatData[row + "-" + col]["valid"] = isValid;
+} 
 
 /**
  * The modify ui by validate value
@@ -454,9 +598,9 @@ ExternalPluginSkeleton.prototype.setValidateStyleAtCell = function(row, col, val
 }
 
 function convertData(data) {
-   if(data.length == 0){
-            return false;
-        }
+    if (data.length == 0) {
+        return false;
+    }
     var col_len = data[0].length;
     var row_len = data.length;
     var newData = {};

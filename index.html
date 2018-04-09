@@ -4,20 +4,167 @@
 <head>
     <title>handsontable demo</title>
     <link rel="stylesheet" media="screen" href="dist/handsontable.full.min.css">
-    <script src="dist/handsontable.full.min.js"></script>
+    <link rel="stylesheet" media="screen" href="dist/jquery-ui.css">
+    <link rel="stylesheet" type="text/css" href="dist/pure-min.css">
+    <script type="text/javascript" charset="utf-8" src="dist/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="dist/jquery-ui.js"></script>
+    <script src="dist/handsontable.full.js"></script>
     <script type="text/javascript" src="dist/externalPluginSkeleton.js"></script>
     <script type="text/javascript" charset="utf-8" src="dist/chart.min.js"></script>
-     <script type="text/javascript" charset="utf-8" src="dist/dot.min.js"></script>
-
+    <script type="text/javascript" charset="utf-8" src="dist/dot.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="dist/async.min.js"></script>
     <style type="text/css">
-    .handsontable .errorCell{
-        border:1px solid red;
-    }        
+    .handsontable .errorCell {
+        border: 1px solid red;
+    }
+
+    .ui-autocomplete {
+        max-height: 200px;
+        overflow-y: auto;
+        /* prevent horizontal scrollbar */
+        overflow-x: hidden;
+    }
+    /* IE 6 doesn't support max-height
+       * we use height instead, but this forces the menu to always be this tall
+       */
+
+    * html .ui-autocomplete {
+        height: 200px;
+    }
+
+    #container {
+        display: grid;
+        grid-template-rows: 5% 45% auto;
+        height: calc(100vh - 20px);
+    }
+
+    #action-zone {
+        /*  grid-row-start: 1;
+        grid-row-end: 2;*/
+        background: #eee;
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    #sheet-zone {
+        /*grid-row-start: 2;
+        grid-row-end: 3;*/
+        display: grid;
+        grid-template-rows: 90% auto;
+    }
+
+    #chart-zone {
+        /*       grid-row-start: 3;
+        grid-row-end: 4;*/
+        background: #eee;
+    }
+
+    .tab-content {
+        overflow: scroll
+    }
+
+
+    #sheet-zone-tabs {
+        position: relative;
+        padding-bottom: 3em;
+    }
+
+    .ui-tabs .ui-tabs-panel {
+        padding: 0;
+    }
+
+    #sheet-zone-tabs .ui-tabs-nav {
+        position: absolute;
+        left: 0.25em;
+        right: 0.25em;
+        bottom: 0.25em;
+        padding: 0em 0.2em 0.2em;
+        margin: 0;
+    }
+
+    #sheet-zone-tabs .ui-tabs-nav li {
+        top: -1px;
+        border-top: none;
+        border-bottom: 1px solid #ccc !important;
+        font-size: 11px;
+        margin: 0;
+        /*-moz-border-radius: 0px 0px 4px 4px; */
+        /*-webkit-border-radius: 0px 0px 4px 4px; */
+        /*border-radius: 0px 0px 4px 4px; */
+    }
+
+    #sheet-zone-tabs .ui-tabs-active {
+        background: #fff;
+        border: 1px solid #ccc;
+        /*border:0;*/
+    }
+
+    #sheet-zone-tabs .ui-tabs-active a {
+        color: #000;
+    }
+
+
+    #sheet-zone-tabs .ui-widget-header {
+        background: none;
+        border: none;
+    }
+
+    #sheet-zone-tabs .ui-widget {
+        font-size: 11px;
+    }
+
+    .action-list li{
+        float:left;
+        list-style: none;
+        position: relative;
+        padding:0;
+        margin-left:5px;
+    }
     </style>
 </head>
 
 <body>
-    <div id="container"></div>
+    <div id="container">
+        <div id="action-zone">
+            <div>
+                <ul class="action-list">
+                    <li><button data-prop="bar" onclick="draw('bar')">柱状图</button></li>
+                    <li><button data-prop="line" onclick="draw('line')">线状图</button></li>
+                </ul>
+            </div>
+            <div>
+                <ul class="action-list">
+                     <button data-prop="bar" onclick="update()">更新数据</button>
+                    <button data-prop="bar" onclick="exportChart()">导出图表</button>
+                </ul>
+            </div>
+            <div></div>
+        </div>
+        <div id="sheet-zone">
+            <div class="tab-content">
+                <div class="tab-pane active" id="tab1">
+                    <div id="example1" class="hot handsontable htColumnHeaders"></div>
+                </div>
+                <div class="tab-pane" id="tab2">
+                    <div id="example2" class="hot handsontable htColumnHeaders"></div>
+                </div>
+                <div class="tab-pane" id="tab3">
+                    <div id="example3" class="hot handsontable htColumnHeaders"></div>
+                </div>
+            </div>
+            <div id="sheet-zone-tabs">
+                <ul class="nav nav-tabs" id="myTab">
+                    <li><a href="#tab1" data-toggle="tab">Tab 1</a></li>
+                    <li><a href="#tab2" data-toggle="tab">Tab 2</a></li>
+                    <li><a href="#tab3" data-toggle="tab">Tab 3</a></li>
+                </ul>
+            </div>
+        </div>
+        <div id="chart-zone">
+            <div id="event_logger"></div>
+             <canvas id="myChart" width="200" height="200"></canvas>
+        </div>
+    </div>
+    <!--   <div id="container"></div>
     <div id="chartTypeList">
         <button data-prop="bar" onclick="draw('bar')">柱状图</button>
         <button data-prop="line" onclick="draw('line')">线状图</button>
@@ -27,10 +174,36 @@
         <button data-prop="bar" onclick="exportChart()">导出图表</button>
     </div>
     <div id="event_logger"></div>
-    <canvas id="myChart" width="400" height="400"></canvas>
+    <canvas id="myChart" width="400" height="400"></canvas> -->
     <script type="text/javascript">
     var $$ = function(el) {
         return document.getElementById(el);
+    }
+
+    $("#sheet-zone").tabs();
+
+    function mapAlphabetHeader(count) {
+        var alphaStartIndex = 65;
+        var alphaEndIndex = 90;
+
+        var start = start || 0;
+        var alphaTurn = -1;
+        var alphaCount = alphaEndIndex - alphaStartIndex + 1;
+        var result = [];
+
+        for (var i = 0, s = 0; s < count; s++, i++) {
+            if (i >= alphaCount) {
+                i = 0;
+                alphaTurn = alphaTurn + 1;
+            }
+            if (alphaTurn >= alphaCount) {
+                break;
+            }
+
+            result.push((alphaTurn >= 0 ? String.fromCharCode(alphaStartIndex + alphaTurn) : "") + String.fromCharCode(alphaStartIndex + i));
+        }
+
+        return result;
     }
 
     var global_hstable;
@@ -43,8 +216,8 @@
         this.bindEvent();
     }
 
-    T.prototype.convertData = function(data){
-        if(data.length == 0){
+    T.prototype.convertData = function(data) {
+        if (data.length == 0) {
             return false;
         }
         var col_len = data[0].length;
@@ -64,49 +237,71 @@
             }
         }
         **/
-        for(var i=0; i<row_len; i++){
-            for(var j=0; j<col_len; j++){
-                newData[i+"-"+j] = {
+        for (var i = 0; i < row_len; i++) {
+            for (var j = 0; j < col_len; j++) {
+                newData[i + "-" + j] = {
                     "value": data[i][j],
-                    "formatString":null,
-                    "valid":true
+                    "formatString": null,
+                    "valid": true
                 }
             }
         }
 
-         this.formatData = newData;
+        this.formatData = newData;
 
-         // console.log("==newData==", newData);
+        // console.log("==newData==", newData);
     }
 
     T.prototype.initConfig = function() {
         //todo binding data
         var _this = this;
+
+        var rowN = 10,
+            colN = 20;
+
+        //需要注意兼容性
+        // var data = (new Array(rowN)).fill((new Array(colN)).fill(0));
+
+        // this.data = data;
+        // console.log(data);
+
         this.data = data = [
-            ['', 'Tesla', 'Mazda', 'Mercedes', 'Mini', 'Mitsubishi', 'AA', 'BB', 'CC', 'DD', 'EE'],
-            ['2017', 0, 2941, 4303, 354, 5814, 2, 2422, 5399, 776, 4151],
-            ['2018', 3, 2905, 2867, 412, 5284, 0, 2941, 4303, 354, 5814],
-            ['2019', 4, 2517, 4822, 552, 6127, 3, 2905, 2867, 412, 5284],
-            ['2020', 2, 2422, 5399, 776, 4151, 4, 2517, 4822, 552, 6127]
+            ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
         ];
 
         this.convertData(data);
 
-        this.container = $$("container");
+        this.container = $$("example1");
         this.event_logger = $$("event_logger");
 
+        var colHeaders = mapAlphabetHeader(10);
         this.config = {
             data: data,
-            minRows: 5,
-            minCols: 6,
-            minSpareRows: 1,
+            // minRows: 5,
+            // minCols: 6,
+            // minSpareRows: 1,
+            colWidths: "100px",
             autoWrapRow: true,
-            colHeaders: true,
+            colHeaders: colHeaders,
             contextMenu: true,
-            // formulas: true
+            formulas: true
         }
 
-        this.preHookList = ["afterSelection", "afterChange", "afterOnCellMouseDown","afterOnCellCornerDblClick"];
+        this.preHookList = ["afterSelection", "afterChange", "afterOnCellMouseDown", "afterOnCellCornerDblClick"];
 
         this.preHookList.forEach(function(hook) {
             _this.config[hook] = function() {
@@ -118,6 +313,16 @@
     T.prototype.bindData = function() {
         var _this = this;
         global_hstable = this.hstable = new Handsontable(_this.container, _this.config);
+
+        global_hstable2 = new Handsontable($$("example2"), {
+            data: newTable(20, 10),
+            colHeaders: true
+        });
+
+        global_hstable3 = new Handsontable($$("example3"), {
+            data: newTable(30, 20),
+            colHeaders: true
+        })
         // global_hstable.enablePlugin();
         // this.hstable.enablePlugin();
     }
@@ -167,7 +372,7 @@
 
         console.log("==labels==", labels);
         console.log("==datasets==", datasets);
-         console.log("==d==", d);
+        console.log("==d==", d);
 
         global_labels = labels;
         global_datasets = d;
@@ -221,7 +426,7 @@
     }
 
     function draw(type) {
-      global_type = type;
+        global_type = type;
         var ctx = document.getElementById("myChart").getContext('2d');
         var result = myT.generateData(selectionArea);
 
@@ -237,22 +442,22 @@
         });
     }
 
-    function wrapper(str){
-      return ["\"", str.replace(/\"/,"\""),"\""].join("")
+    function wrapper(str) {
+        return ["\"", str.replace(/\"/, "\""), "\""].join("")
     }
 
-    function exportChart(){
-      let header = new Headers({
+    function exportChart() {
+        let header = new Headers({
             // 'Access-Control-Allow-Origin': '*',
             'Content-Type': 'application/json'
         });
         // let opt = Object.assign({}, defaultOptions, options); //将默认的参数和传过来的合并在一起
         var exportData = {
-                type: global_type,
-                labels: global_labels,
-                datasets: global_datasets
-            };
-        
+            type: global_type,
+            labels: global_labels,
+            datasets: global_datasets
+        };
+
 
         let sentData = {
             method: "POST",
@@ -263,7 +468,7 @@
 
         console.log("==sentData==", sentData);
 
-      var promise = new Promise((reslove, reject) => {
+        var promise = new Promise((reslove, reject) => {
             fetch("http://127.0.0.1:3000/export", sentData)
                 // .then(response => response.json())
                 .then(responseText => {
@@ -279,16 +484,21 @@
             console.log('出错了');
         });
 
-        promise.then(function(value){
-             window.open("http://127.0.0.1:3000/new.html");
+        promise.then(function(value) {
+            window.open("http://127.0.0.1:3000/new.html");
             console.log(value);
-        }).catch(function(error){
+        }).catch(function(error) {
             console.error(error);
         });
     }
 
-
-  
+    function newTable(row, col) {
+        var x = new Array(row);
+        for (var i = 0; i < row; i++) {
+            x[i] = new Array(col);
+        }
+        return x
+    };
     </script>
     <script>
     </script>

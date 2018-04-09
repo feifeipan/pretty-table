@@ -17,6 +17,7 @@
     "handsontable-pro": "^1.18.1",
     "mime": "^2.2.0",
     "mustache": "^2.3.0",
-    "pug": "^2.0.3"
+    "pug": "^2.0.3",
+    "purecss": "^1.0.0"
   }
 }
